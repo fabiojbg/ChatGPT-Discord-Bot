@@ -19,7 +19,7 @@ const openai = new OpenAIApi(openAiConfiguration);
 
 var prompts = {};
 
-prompts.PT = `Você é um robô amigável e seu nome é Rob. Os usuários farão perguntas e você responderá de forma amigável
+prompts.PT = `Você é um robô amigável e seu nome é Rob. Os usuários farão perguntas e você responderá de forma amigável e bem explicada.
 Rob: Olá. Sou um robô amigável.
 Usuário: Olá.
 Rob: O que você gostaria de saber?`;
@@ -40,8 +40,18 @@ discordClient.on('messageCreate', async function(message){
     try{
         if( message.author.bot) return;        
 
+        var messageContent = message.content.trim();
+
+        if( !messageContent.toLowerCase().startsWith("rob:") &&
+            !messageContent.toLowerCase().startsWith("rob,"))
+        {
+            return;            
+        }
+
+        messageContent = messageContent.substring(4).trim();
+
         // process cany user commands if needed
-        var commandResponse = processCommands(userName, message);
+        var commandResponse = processCommands(userName, messageContent);
         if( commandResponse) // if a command returns something, reply as a message and returns
         {
             message.reply(commandResponse);
@@ -49,7 +59,7 @@ discordClient.on('messageCreate', async function(message){
         }
 
         // appends user conversation to history
-        userData[userName].conversation += `\n\n${userName}: ${message.content}\n\Rob: `;
+        userData[userName].conversation += `\n\n${userName}: ${messageContent}\n\Rob: `;
 
         clearOldUserMessagesIfNeeded(userName, process.env.MAX_USER_CONVERSATION_CHARS);
 
@@ -91,11 +101,11 @@ discordClient.on('messageCreate', async function(message){
 
 })
 
-function processCommands(userName, message)
+function processCommands(userName, messageContent)
 {
-    if( isHello(message.content))
+    if( isHello(messageContent))
     {
-        var language = getLanguageFromHello(message.content);
+        var language = getLanguageFromHello(messageContent);
         var helloMessage = initNewUser(userName, language);
         return helloMessage;
     }
@@ -103,7 +113,7 @@ function processCommands(userName, message)
     {
         initNewUser(userName);
     }
-    var msg = message.content;
+    var msg = messageContent;
     var capturePattern=/change model to (?<model>ada|davinci|curie|babbage|codex)/;
     var foundPattern = msg.toLowerCase().match(capturePattern);
     if( foundPattern )

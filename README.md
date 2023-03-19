@@ -1,6 +1,8 @@
 # chatGPTDiscordBot
 This is a simple chatGPT bot for Discord
 
+![alt text](./images/chat_sample.png)
+
 To run this robot, follow these steps:
 
 1) Clone the repository and open it in Visual Studio Code.

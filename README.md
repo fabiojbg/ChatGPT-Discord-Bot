@@ -23,6 +23,7 @@ To run this robot, follow these steps:
 Observations:
 
 This robot(Rob) can store a certain number of previous messages in order to be able to mantain the conversations. If you wish to clear all previous messages and start a new topic all you have to do is say: "Rob, Hi"
+The conversations is stored in memory and it will be lost if the service is rebooted
 
 
 

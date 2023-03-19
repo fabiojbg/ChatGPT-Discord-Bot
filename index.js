@@ -19,18 +19,26 @@ const openai = new OpenAIApi(openAiConfiguration);
 
 var prompts = {};
 
-prompts.PT = `Você é um robô amigável e seu nome é Rob. Os usuários farão perguntas e você responderá de forma amigável e bem explicada.
-Rob: Olá. Sou um robô amigável.
+prompts.PT = `Você é um robô especialista nos mais variados assuntos e seu nome é Rob. Os usuários farão perguntas e você responderá de forma bem detalhada mesmo que precisa fornecer uma responsa longa.
+Rob: Olá. Sou um robô especialista em vários assuntos.
 Usuário: Olá.
 Rob: O que você gostaria de saber?`;
 
-prompts.EN = `You're a friendly robot and your name is Rob. The users will make questions for you and you will responde it politely.
-Rob: Hi. I'm a friendly robot
-Usuário: Hi.
+prompts.PT_Turbo = [{role: "system", content: `Você é um robô especialista nos mais variados assuntos e seu nome é Rob. Os usuários farão perguntas e você responderá de forma bem detalhada mesmo que precisa fornecer uma responsa longa.`},
+{role: "assistant", content:"Olá. Sou um robô especialista em vários assuntos."},
+{role: "user", content:"Olá."},
+{role: "assistant", content:"O que você gostaria de saber?"}];
+
+prompts.EN = `You're a friendly robot and your name is Rob. The users will make questions for you and you will responde it politely and with details.
+Rob: Hi. I'm a friendly robot.
+User: Hi.
 Rob: What would you like to know?`;
 
-// prompts.EN = ``;
-// prompts.PT = ``;
+prompts.EN_Turbo = [{role: "system", content: `You're a friendly robot and your name is Rob. The users will make questions for you and you will responde it politely and with details.`},
+{role: "assistant", content:"Hi. I'm a friendly robot."},
+{role: "user", content:"Hi."},
+{role: "assistant", content:"What would you like to know?"}];
+
 
 var userData = {};
 
@@ -38,7 +46,8 @@ discordClient.on('messageCreate', async function(message){
     var userName = message.author.username;
     
     try{
-        if( message.author.bot) return;        
+        if( message.author.bot) 
+            return;        
 
         var messageContent = message.content.trim();
 
@@ -59,25 +68,50 @@ discordClient.on('messageCreate', async function(message){
         }
 
         // appends user conversation to history
-        userData[userName].conversation += `\n\n${userName}: ${messageContent}\n\Rob: `;
+        userData[userName].conversation += `\n\n${userName}: ${messageContent}\n\Rob: `;        
+        userData[userName].conversationTurbo.push({"role" : "user", "content": messageContent});
 
         clearOldUserMessagesIfNeeded(userName, process.env.MAX_USER_CONVERSATION_CHARS);
 
+        let gptResponse;
+        if( userData[userName].responseModel == 'gpt-3.5-turbo')
+        {            
+            let conv = [...userData[userName].promptTurbo, ...userData[userName].conversationTurbo];
+            gptResponse = await openai.createChatCompletion({
+                model: 'gpt-3.5-turbo',
+                messages: conv,
+                temperature: userData[userName].temperature,
+            })
+        }
+        else
+        {
         // conversation must have the prompt in the begining
         var promptWithConversation = `${userData[userName].prompt}${userData[userName].conversation}`;
-        console.log(`**********************\n${promptWithConversation}`);
-
-        const gptResponse = await openai.createCompletion({
-            model: userData[userName].responseModel,
-            prompt: promptWithConversation,
-            temperature: userData[userName].temperature,
-            max_tokens: 2000,
-            stop: ["Rob: ", `${userName}:`]
-        })
+            console.log(`**********************\n${promptWithConversation}`);
+            gptResponse = await openai.createCompletion({
+                model: userData[userName].responseModel,
+                prompt: promptWithConversation,
+                temperature: userData[userName].temperature,
+                max_tokens: 2000,
+            })
+        }
 
         if( gptResponse.status == 200)
         {
-            const responseMsg = gptResponse.data.choices[0].text;        
+            let responseMsg;
+            if( userData[userName].responseModel == 'gpt-3.5-turbo')
+            {
+                responseMsg = gptResponse.data.choices[0].message.content;        
+                userData[userName].conversationTurbo.push(gptResponse.data.choices[0].message);
+                userData[userName].conversation += `${responseMsg}`;
+            }
+            else
+            {
+                responseMsg = gptResponse.data.choices[0].text;        
+                userData[userName].conversation += `${responseMsg}`;
+                userData[userName].conversationTurbo.push({role:"assistant", content: responseMsg});
+            }
+
             const usage = gptResponse.data.usage;
 
             console.log( responseMsg );
@@ -85,18 +119,16 @@ discordClient.on('messageCreate', async function(message){
             updateUserUsage(userName, usage, true); // update the token used by the user
 
             message.reply(`${responseMsg}\n(Total Tokens=${usage.total_tokens})`);
-
-            userData[userName].conversation += `${responseMsg}`;
         }
         else
         {
-            message.reply(`OpenApi error: ${gptResponse.statusText}`);
+            message.reply(`OpenApi error: ${gptResponse.statusText}.Error Content: ${gptResponse.data}`);
         }
     }
     catch(err)
     {
         console.log("Houve um erro na comunicação com a OpenAI. Erro = " + err);
-        message.reply("Houve um erro na comunicação com a OpenAI. Erro = " + err);
+        message.reply("Houve um erro na comunicação com a OpenAI. Erro = " + err + "\nChatGPT Error=" + err.response.data.error.message);
     }
 
 })
@@ -114,10 +146,13 @@ function processCommands(userName, messageContent)
         initNewUser(userName);
     }
     var msg = messageContent;
-    var capturePattern=/change model to (?<model>ada|davinci|curie|babbage|codex)/;
+    var capturePattern=/change model to (?<model>turbo|ada|davinci|curie|babbage|codex)/;
     var foundPattern = msg.toLowerCase().match(capturePattern);
     if( foundPattern )
     {
+        if( foundPattern.groups.model == 'davinci')
+        userData[userName].responseModel = 'text-davinci-003';
+        else
         if( foundPattern.groups.model == 'ada')
             userData[userName].responseModel = 'text-ada-001';
         else
@@ -130,7 +165,7 @@ function processCommands(userName, messageContent)
         if( foundPattern.groups.model == 'codex')
             userData[userName].responseModel = 'code-davinci-002';
         else
-            userData[userName].responseModel = 'text-davinci-003';
+        userData[userName].responseModel = 'gpt-3.5-turbo';
         return `Model changed to ${userData[userName].responseModel}`;
     }
 
@@ -161,8 +196,10 @@ function initNewUser(userName, language)
     userData[userName].temperature = 0.7;
     userData[userName].prompt = prompts[language];
     userData[userName].conversation = '';
+    userData[userName].promptTurbo = prompts[language+'_Turbo'];
+    userData[userName].conversationTurbo = [];
     userData[userName].preferredLanguage = language;
-    userData[userName].responseModel = 'text-davinci-003';
+    userData[userName].responseModel = 'gpt-3.5-turbo';
 
     userData[userName].usage={}; 
     userData[userName].usage["PromptTokens"]=0;
@@ -170,7 +207,7 @@ function initNewUser(userName, language)
     userData[userName].usage["TotalTokens"]=0;
 
     if( language=="PT")
-        return `Olá.\nSou o Rob. Sou um robô amigável.\nComo posso te ajudar?`;
+        return `Olá.\nSou o Rob. Sou um robô especialista nos mais variados assuntos.\nComo posso te ajudar?`;
     
     return `Hi.\nI'm Rob. I'm a friendly robot.\nHow can I help you?`;
 }
@@ -235,8 +272,22 @@ function clearOldUserMessagesIfNeeded(userName, maxChars)
 
     userData[userName].conversation = str;
     console.log(`Conversation of user ${userName} was trimmed`);
-}
 
+    if( userData[userName].conversationTurbo.length < 2)
+        return;
+    let i;
+    let charMsgCount = 0;
+    for( i = userData[userName].conversationTurbo.length-1; i>=0; i--)
+    {
+        charMsgCount += userData[userName].conversationTurbo.content.length;
+        if( charMsgCount > maxChars)
+        {            
+            breakPoint = i-userData[userName].conversationTurbo+1;
+            userData[userName].conversationTurbo = userData[userName].conversationTurbo.slice(breakPoint) // get last messages
+            break;
+        }
+    }
+}
 
 discordClient.login(process.env.DISCORD_TOKEN);
 console.log("ChatGPT Botelho Bot is online on Discord");

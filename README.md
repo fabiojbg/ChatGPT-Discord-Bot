@@ -17,3 +17,9 @@ To run this robot, follow these steps:
 
 7) Open Discord and talk to the robot. IMPORTANT: You must start your questions with "Rob," or "Rob:" so the robot knows you are addressing it and not someone else. Example: Rob, how many planets are in our solar system?
 
+Observations:
+
+This robot(Rob) can store a certain number of previous messages in order to be able to mantain the conversations. If you wish to clear all previous messages and start a new topic all you have to do is say: "Rob, Hi"
+
+
+

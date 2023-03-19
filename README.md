@@ -1,10 +1,10 @@
 # chatGPTDiscordBot
-This is a simple chatGPT bot for Discord capable of mantain the conversation history.
+This is a simple chatGPT bot for Discord capable of keeping the history of the conversations.
 Here is an example:
 
 ![alt text](./images/chat_sample.png)
 
-To run this robot, follow these steps:
+To run this Bot, follow these steps:
 
 1) Clone the repository and open it in Visual Studio Code.
 

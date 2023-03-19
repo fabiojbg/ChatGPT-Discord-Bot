@@ -1,6 +1,8 @@
 # chatGPTDiscordBot
-This is a simple chatGPT bot for Discord capable of keeping the history of the conversations.
+This is a simple chatGPT bot for Discord capable of mantain the conversation history.
+By default, this Bot uses the 'gpt-3.5-turbo' openAI model.
 Here is an example:
+(Unfortunately this model is not yet good at complex calculations but I tested this with chatGPT-4 and the results were just perfect. I will update this for chatGPT-4 as soon as their API is available.)
 
 ![alt text](./images/chat_sample.png)
 

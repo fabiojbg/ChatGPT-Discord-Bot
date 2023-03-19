@@ -128,7 +128,8 @@ discordClient.on('messageCreate', async function(message){
     catch(err)
     {
         console.log("Houve um erro na comunicação com a OpenAI. Erro = " + err);
-        message.reply("Houve um erro na comunicação com a OpenAI. Erro = " + err + "\nChatGPT Error=" + err.response.data.error.message);
+
+        message.reply("Houve um erro na comunicação com a OpenAI. Erro = " + err + "\nChatGPT Error=" + (err?.response?.data?.error?.message ?? "Unspecified"));
     }
 
 })

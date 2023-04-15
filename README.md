@@ -3,7 +3,7 @@ This is a very complete chatGPT bot for Discord capable of keeping the conversat
 
 By default, this Bot uses the 'gpt-3.5-turbo' openAI model.
 
-To direct you messages to the bot, you must start your messages with "rob, ". 
+To address your messages to the bot, you must start your messages with "rob, ". 
 
 Below there is a chat example.
 

@@ -1,10 +1,11 @@
 # chatGPTDiscordBot
-This is a simple chatGPT bot for Discord capable of keeping the conversation history.
+This is a very complete chatGPT bot for Discord capable of keeping the conversation history. In fact, the bot keeps the most conversation history supported for the model. For example: if the 'gpt-3.5-turbo' model is being used, the bot will keep the most conversation history that consumes up to the 4096 tokens supported by the model. In fact, the bot saves some tokens for the bot responses, this can be set in the in the parameter TOKENS_TO_RESERVE_FOR_COMPLETION in the .env file.
 
 By default, this Bot uses the 'gpt-3.5-turbo' openAI model.
 
+To direct you messages to the bot, you must start your messages with "rob, ". 
+
 Below there is a chat example.
-(Unfortunately this model is not yet good at complex calculations but I tested this with chatGPT-4 and the results were better but not perfect. I will update this for chatGPT-4 as soon as their API is available.)
 
 ![alt text](./images/chat_sample.png)
 
@@ -22,12 +23,10 @@ To run this Bot, follow these steps:
 
 6) Run npm start dev to start the application.
 
-7) Open Discord and talk to the robot. IMPORTANT: You must start your questions with "Rob," or "Rob:" so the robot knows you are addressing it and not someone else. Example: Rob, how many planets are in our solar system?
-
 Observations:
 
-This robot(Rob) can store a certain number of previous messages in order to be able to mantain the conversations. If you wish to clear all previous messages and start a new topic all you have to do is say: "Rob, Hi"
-The conversations is stored in memory and it will be lost if the service is rebooted
+If you wish to clear all conversation history to start a new topic, all you have to do is say: "Rob, Hi"
+The conversations are stored in memory and it will be lost if the service is rebooted.
 
 
 

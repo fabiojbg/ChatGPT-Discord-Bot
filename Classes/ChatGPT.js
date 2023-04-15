@@ -28,10 +28,15 @@ async function createChatCompletion(openAI, conversation)
                 responseMsg:`conversation is empty`};
     try
     {
+        let maxConversationTokens = conversation.getMaxTokensSupported();
+        let usedTokens = conversation.getCurrentConversationTokens();
+        let maxTokens = maxConversationTokens - usedTokens;
+
         let gptResponse = await openAI.createChatCompletion({
             model: conversation.responseModel,
             messages: conversation.getFullConversation(),
             temperature: conversation.temperature,
+            max_tokens: maxTokens - 20,
         })
 
         if( gptResponse.status == 200)
@@ -66,14 +71,17 @@ async function createCompletion(openai, conversation)
     try
     {
         // conversation must have the prompt in the begining
-        var promptWithConversation = conversation.getFullConversation('text');
+        var promptWithConversation = conversation.getFullConversation();
+        var maxConversationTokens = conversation.getMaxTokensSupported();
+        var usedTokens = conversation.getCurrentConversationTokens();
+        let maxTokens = maxConversationTokens - usedTokens;
 
         console.log(`**********************\n${promptWithConversation}`);
         gptResponse = await openai.createCompletion({
             model: conversation.responseModel,
             prompt: promptWithConversation + "\r\nRob: ",
             temperature: conversation.temperature,
-            max_tokens: 2000,
+            max_tokens: maxTokens - 20,
         })
 
         if( gptResponse.status == 200)

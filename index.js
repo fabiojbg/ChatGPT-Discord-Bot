@@ -38,6 +38,8 @@ discordClient.on('messageCreate', async function(discordMessage){
             return;
         }
 
+        await discordMessage.channel.sendTyping(); // show users the bot is typing
+
         if( messageContent.startsWith("/summarize"))
         {
             if( discordMessage.attachments.size > 0)
@@ -57,7 +59,7 @@ discordClient.on('messageCreate', async function(discordMessage){
         const result = await chatGPT.createCompletion(userConversation);
         if( result.success )
         {
-            discordMessage.reply(`${result.responseMsg}\n(Total Tokens=${userConversation.getMetric("TotalTokens")})`);
+            discordMessage.reply(`${result.responseMsg}\n(Total Tokens=${userConversation.getMetric("TotalTokens")}) / ConversationTokens=${userConversation.getCurrentConversationTokens()}`);
         }
         else
         {
@@ -111,7 +113,10 @@ function getUserConversation(userName, messageContent)
     if( isHello(messageContent)) // if is Hello, user is asking to initialize new subject
     {
         const language = detectLanguageFromHello(messageContent);
-        conversations[userName] = new Conversation(userName, language, process.env.MAX_USER_CONVERSATION_CHARS);
+        conversations[userName] = new Conversation(userName, 
+                                                   language, 
+                                                   process.env.MAX_USER_CONVERSATION_CHARS,
+                                                   parseInt(process.env.TOKENS_TO_RESERVE_FOR_COMPLETION));
         return conversations[userName];
     }
 
@@ -204,14 +209,16 @@ function isHello(msg)
 
 function detectLanguageFromHello(msg)
 {
+    let result = "EN";
     Object.keys(hellos).forEach(function(key) {
-        if( hellos[key].indexOf(msg.trim().toLowerCase() >=0 ))
-            return key;
+        if( hellos[key].indexOf(msg.trim().toLowerCase()) >=0 )
+        {
+        	result = key;
+            return;
+        }
     });
-    return "EN";
+    return result;
 }
-
-
 
 discordClient.login(process.env.DISCORD_TOKEN);
 console.log("ChatGPT Bot is online on Discord");

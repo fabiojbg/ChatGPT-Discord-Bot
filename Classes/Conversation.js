@@ -1,6 +1,7 @@
 const Prompt = require("./Prompt")
+const tiktoken = require('tiktoken-node')
 
-function Conversation(userName, language, maxConversationLength)
+function Conversation(userName, language, minTokensToReseveForConversation)
 {
     this.prompt = new Prompt(language);
     this.userName = userName;
@@ -8,11 +9,21 @@ function Conversation(userName, language, maxConversationLength)
     this.preferredLanguage = language;
     this.temperature = 0.7;
     this.responseModel = 'gpt-3.5-turbo';
-    this.maxConversationLength = maxConversationLength | 3000;
     this.usage={}; 
     this.usage["PromptTokens"]=0;
     this.usage["CompletionTokens"]=0;
     this.usage["TotalTokens"]=0;
+    this.minTokensToReseveForConversation = minTokensToReseveForConversation | 500;
+    this.tokensPerModel = [
+        { model: "gpt-3.5-turbo", capacity: 4096},
+        { model: "gpt-3.5-turbo-0301", capacity: 4096},
+        { model: "text-davinci-003", capacity: 4097},
+        { model: "text-davinci-002", capacity: 4097},
+        { model: "code-davinci-002", capacity: 8001},
+        { model: "text-curie-001", capacity: 2049},
+        { model: "text-babbage-001", capacity: 2049},
+        { model: "text-ada-001", capacity: 2049}
+    ];
 }
 
 const _completionModels = [ 'text-davinci-003',
@@ -72,18 +83,36 @@ Conversation.prototype.getMetric = function(metricName)
 Conversation.prototype.appendMessage = function (role, message)
 {
     this.conversation.push({ role: role, content: message.trim()})
-    this.conversation = clearOldUserMessagesIfNeeded(this.conversation, this.maxConversationLength);
+
+    // always remove old messages to always leave tokens available to continue conversation (given by this.minTokensToReseveForConversation)
+    let modelCapacity = getMaxTokensForModel(this.tokensPerModel, this.responseModel);
+    this.conversation = clearOldMessagesIfNeeded(this.prompt.getChatPrompt(), this.conversation, this.responseModel, modelCapacity - this.minTokensToReseveForConversation);
+}
+
+Conversation.prototype.getCurrentConversationTokens = function()
+{
+    if( this.getCurrentModelType() == "chat" )
+        return num_tokens_from_messages(this.getFullConversation(), this.responseModel);
+
+    return num_tokens_from_conversation_text( this.getFullConversation(), this.responseModel);    
 }
 
 Conversation.prototype.getFullConversation = function (format = "chat")
 {
+    let conversationType = this.getCurrentModelType();
+
     const conversation = [...this.prompt.getChatPrompt(), 
                           ...this.conversation];
 
-    if( format === "text")                          
+    if( conversationType === "text")                          
         return getConversationText(conversation);
 
     return conversation;
+}
+
+Conversation.prototype.getMaxTokensSupported = function ()
+{
+    return getMaxTokensForModel(this.tokensPerModel, this.responseModel);
 }
 
 Conversation.prototype.updateUserUsage = function (usage, showInConsole)
@@ -122,36 +151,104 @@ function getConversationText(sentences)
     return textConversation;        
 }
 
-function clearOldUserMessagesIfNeeded(conversation, maxConversationLength)
+function clearOldMessagesIfNeeded(prompt, messages, model, maxTokensToKeepInMessages)
 {
-    if( conversation.length < 2)
-        return conversation;
-    let i;
-    let charMsgCount = 0;
-    for( i = conversation.length-1; i>=0; i--)
+    let i = 0;
+    let truncatedMessages;
+    let conversationTokens;
+    do
     {
-        charMsgCount += conversation[i].content.length;
-        if( charMsgCount > maxConversationLength)
-        {            
-            breakPoint = i-conversation.length+1;
-            conversation = conversation.slice(breakPoint) // get last messages
-            break;
-        }
-    }
-    return conversation;
+        truncatedMessages = [...prompt, 
+                             ...messages.slice(i)];
+        conversationTokens = num_tokens_from_messages(truncatedMessages, model);
+
+    } while (conversationTokens > maxTokensToKeepInMessages);
+
+    if( i == 0)
+        return messages;
+    
+    return messages.slice(i);
 }
 
-function numTokenFromMessages()  // TODO
+
+function getMaxTokensForModel(modelLimits, model)
 {
+    let res = modelLimits.filter( modelLimit => modelLimit.model == model );
+    if( res.length == 0)
+        return 2046;
+
+    return res[0].capacity;
+}
+
+function num_tokens_from_messages(messages, model) 
+{
+    // adapted from https://github.com/openai/openai-cookbook/blob/main/examples/How_to_count_tokens_with_tiktoken.ipynb
+    let tokens_per_message = 0;
+    let tokens_per_name = 0;
     try
     {
+        let encoding = tiktoken.encodingForModel(model);
+        if( model === "gpt-3.5-turbo")
+        {
+            console.log("Warning: gpt-3.5-turbo may change over time. Returning num tokens assuming gpt-3.5-turbo-0301.");
+            return num_tokens_from_messages(messages, "gpt-3.5-turbo-0301");
+        }
+        else if( model === "gpt-4" )
+        {
+            console.log("Warning: gpt-4 may change over time. Returning num tokens assuming gpt-4-0314.")
+            return num_tokens_from_messages(messages, "gpt-4-0314")
+        }
+        else if( model === "gpt-3.5-turbo-0301")
+        {
+            tokens_per_message = 4 // every message follows <|start|>{role/name}\n{content}<|end|>\n
+            tokens_per_name = -1  // if there's a name, the role is omitted
+        }
+        else if( model === "gpt-4-0314")
+        {
+            tokens_per_message = 3
+            tokens_per_name = 1        
+        }
+        else
+            encoding = tiktoken.getEncoding("cl100k_base");
 
+        let i = 0;
+        let num_tokens = 0;
+        while( i < messages.length)
+        {
+            let message = messages[i];
+            num_tokens += tokens_per_message;
+            for (var prop in message) {
+                if (Object.prototype.hasOwnProperty.call(message, prop)) {
+                    let tokens = encoding.encode(message[prop]);
+                    num_tokens += tokens.length;
+                    if( prop === "name")
+                        num_tokens += tokens_per_name;
+                }
+            }
+            i++;
+        }
+        num_tokens += 3;
+        return num_tokens;
     }
     catch(err)
     {
-        console.log(`Model `)
+        console.log("There was an error calculating tokens. Error = " + err + "\r\n" + err.stack);
     }
 }
 
+function num_tokens_from_conversation_text(conversationText, model) 
+{
+    try
+    {
+        let encoding = tiktoken.encodingForModel(model);
+        let tokens = encoding.encode(conversationText);
+        return tokens.length;
+    }
+    catch(err)
+    {
+        console.log("There was an error calculating tokens. Error = " + err + "\r\n" + err.stack);
+    }
+    
+}
 
 module.exports = Conversation;

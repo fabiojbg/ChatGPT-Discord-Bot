@@ -59,7 +59,18 @@ discordClient.on('messageCreate', async function(discordMessage){
         const result = await chatGPT.createCompletion(userConversation);
         if( result.success )
         {
-            discordMessage.reply(`${result.responseMsg}\n(Total Tokens=${userConversation.getMetric("TotalTokens")}) / ConversationTokens=${userConversation.getCurrentConversationTokens()}`);
+            // discord messagens cannot exceed 2000 characters, so we have to split the messagens in chuncks of 2000 characters or less.
+            var responseChunks = result.responseMsg.match(/(.|[\r\n]){1,1999}/g);
+            let i=0;
+            do{
+                var msg = responseChunks[i];
+                if( i == (responseChunks.length-1))
+                    discordMessage.reply(`${msg}\n(Conversation Tokens=${userConversation.getCurrentConversationTokens()})`);
+                else
+                    discordMessage.reply(msg);
+
+                i++;
+            } while (i>responseChunks.length);
         }
         else
         {
@@ -99,7 +110,8 @@ function preProcessMessage(discordMessage)
     if( discordMessage.content.startsWith("change model to") )
         return messageContent;
 
-    let isPrivateChannel = discordMessage.channel.type === 1; // detect if the channel is private with the bot
+    let isPrivateChannel = discordMessage.channel.type === 1 || // detect if the channel is private with the bot
+                           discordMessage.channel.members.size === 2; // that are just the bot and another user in the channel
 
     if( !botIsMentionedByName && !botIsInMentions && !isPrivateChannel) // return if message is not directed to the bot.
         return null;

@@ -13,10 +13,10 @@ function Conversation(userName, language, minTokensToReseveForConversation)
     this.usage["PromptTokens"]=0;
     this.usage["CompletionTokens"]=0;
     this.usage["TotalTokens"]=0;
-    this.minTokensToReseveForConversation = minTokensToReseveForConversation | 500;
+    this.minTokensToReseveForConversation = minTokensToReseveForConversation | 250;
     this.tokensPerModel = [
-        { model: "gpt-3.5-turbo", capacity: 4096},
-        { model: "gpt-3.5-turbo-0301", capacity: 4096},
+        { model: "gpt-3.5-turbo", capacity: 4097},
+        { model: "gpt-3.5-turbo-0301", capacity: 4097},
         { model: "text-davinci-003", capacity: 4097},
         { model: "text-davinci-002", capacity: 4097},
         { model: "code-davinci-002", capacity: 8001},
@@ -26,16 +26,19 @@ function Conversation(userName, language, minTokensToReseveForConversation)
     ];
 }
 
+// old models based on text completion
 const _completionModels = [ 'text-davinci-003',
 'text-ada-001',
 'text-curie-001',
 'text-babbage-001',
 'code-davinci-002'];
 
+// new models based on chat responses
 const _chatModels =['gpt-3.5-turbo', 
 'gpt-3.5-turbo-0301', 
 'gpt-4', 
 'gpt-4-0314'];
+
 
 Conversation.prototype.getCurrentModelType = function ()
 {
@@ -48,8 +51,9 @@ Conversation.prototype.getCurrentModelType = function ()
 Conversation.prototype.setResponseModel = function (modelName)
 {
     let model = modelName.trim().toLowerCase();
+    
     if( _completionModels.indexOf(model)>0 || 
-        _chatModels.indexOf(model) )
+        _chatModels.indexOf(model)>0 )
     {
         this.responseModel = model;
     }
@@ -86,14 +90,19 @@ Conversation.prototype.appendMessage = function (role, message)
 
     // always remove old messages to always leave tokens available to continue conversation (given by this.minTokensToReseveForConversation)
     let modelCapacity = getMaxTokensForModel(this.tokensPerModel, this.responseModel);
-    this.conversation = clearOldMessagesIfNeeded(this.prompt.getChatPrompt(), this.conversation, this.responseModel, modelCapacity - this.minTokensToReseveForConversation);
+    this.conversation = clearOldMessagesIfNeeded(this.prompt.getChatPrompt(), 
+                                                 this.conversation, 
+                                                 this.responseModel, 
+                                                 this.getCurrentModelType(),
+                                                 modelCapacity - this.minTokensToReseveForConversation);
 }
 
 Conversation.prototype.getCurrentConversationTokens = function()
 {
     if( this.getCurrentModelType() == "chat" )
-        return num_tokens_from_messages(this.getFullConversation(), this.responseModel);
+        return num_tokens_from_messages( this.getFullConversation(), this.responseModel);  // chat models.
 
+    // text models
     return num_tokens_from_conversation_text( this.getFullConversation(), this.responseModel);    
 }
 
@@ -133,7 +142,7 @@ Total  Tokens: ${usage.total_tokens}/${userUsage["TotalTokens"]}
 
 }
 
-
+// converts the chat array to text conversation used by the old models.
 function getConversationText(sentences)
 {
     const textConversation = sentences.reduce( (accumulator, currentValue) => 
@@ -151,22 +160,32 @@ function getConversationText(sentences)
     return textConversation;        
 }
 
-function clearOldMessagesIfNeeded(prompt, messages, model, maxTokensToKeepInMessages)
+
+// remove old messages so the conversation can fit within the number of tokens supported by the current model with some space for responses.
+function clearOldMessagesIfNeeded(mainPrompt, messages, model, modelType, maxTokensToKeepInMessages)
 {
-    let i = 0;
+    // the method is based on the method in the article in https://learn.microsoft.com/en-us/azure/cognitive-services/openai/how-to/chatgpt?pivots=programming-language-chat-completions
+    // but I consider this method an improvement because it always keeps the header prompt that contains the main instructions of the model.
+    let i = -1;
     let truncatedMessages;
     let conversationTokens;
     do
     {
-        truncatedMessages = [...prompt, 
+        i++;
+        truncatedMessages = [...mainPrompt, // this primary prompt is never removed
                              ...messages.slice(i)];
-        conversationTokens = num_tokens_from_messages(truncatedMessages, model);
 
+        if( modelType === "chat" )
+        {
+            conversationTokens = num_tokens_from_messages(truncatedMessages, model);
+        }
+        else
+        {
+            var conversationText = getConversationText(truncatedMessages);
+            conversationTokens = num_tokens_from_conversation_text(conversationText, model);
+        }
     } while (conversationTokens > maxTokensToKeepInMessages);
-
-    if( i == 0)
-        return messages;
-    
+   
     return messages.slice(i);
 }
 
@@ -180,9 +199,9 @@ function getMaxTokensForModel(modelLimits, model)
     return res[0].capacity;
 }
 
+// adapted from https://github.com/openai/openai-cookbook/blob/main/examples/How_to_count_tokens_with_tiktoken.ipynb
 function num_tokens_from_messages(messages, model) 
 {
-    // adapted from https://github.com/openai/openai-cookbook/blob/main/examples/How_to_count_tokens_with_tiktoken.ipynb
     let tokens_per_message = 0;
     let tokens_per_name = 0;
     try
@@ -190,12 +209,12 @@ function num_tokens_from_messages(messages, model)
         let encoding = tiktoken.encodingForModel(model);
         if( model === "gpt-3.5-turbo")
         {
-            console.log("Warning: gpt-3.5-turbo may change over time. Returning num tokens assuming gpt-3.5-turbo-0301.");
+            //console.log("Warning: gpt-3.5-turbo may change over time. Returning num tokens assuming gpt-3.5-turbo-0301.");
             return num_tokens_from_messages(messages, "gpt-3.5-turbo-0301");
         }
         else if( model === "gpt-4" )
         {
-            console.log("Warning: gpt-4 may change over time. Returning num tokens assuming gpt-4-0314.")
+            //console.log("Warning: gpt-4 may change over time. Returning num tokens assuming gpt-4-0314.")
             return num_tokens_from_messages(messages, "gpt-4-0314")
         }
         else if( model === "gpt-3.5-turbo-0301")

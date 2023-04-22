@@ -106,7 +106,7 @@ Conversation.prototype.getCurrentConversationTokens = function()
     return num_tokens_from_conversation_text( this.getFullConversation(), this.responseModel);    
 }
 
-Conversation.prototype.getFullConversation = function (format = "chat")
+Conversation.prototype.getFullConversation = function ()
 {
     let conversationType = this.getCurrentModelType();
 

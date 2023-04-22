@@ -25,13 +25,13 @@ Prompt.prototype.getTextPromp = function  ()
 {
     const textPrompt = this.prompt.reduce( (accumulator, currentValue) => 
     {
-        if( role == "system")
+        if( currentValue.role == "system")
             accumulator = currentValue.content;
         else
-        if( role == "assistant")
+        if( currentValue.role == "assistant")
             accumulator += '\r\nRob: ' + currentValue.content;
         else 
-        if( role == "user")
+        if( currentValue.role == "user")
             accumulator += '\r\nUser: ' + currentValue.content;
     }, '');
 

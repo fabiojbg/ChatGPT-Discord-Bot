@@ -17,5 +17,9 @@
     "pdf-to-text": "^0.0.7",
     "request": "^2.88.2",
     "tiktoken-node": "^0.0.6"
+  },
+  "devDependencies": {
+    "eslint": "^8.39.0",
+    "eslint-plugin-react": "^7.32.2"
   }
 }

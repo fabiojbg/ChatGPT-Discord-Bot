@@ -5,7 +5,7 @@ const ChatGPTSummarizer = require('./Classes/ChatGPTSummarizer')
 require('dotenv').config()
 
 //Prepare to connect to the Discord APi
-const { Client, GatewayIntentBits, Partials, escapeMaskedLink } = require('discord.js')
+const { Client, GatewayIntentBits, Partials } = require('discord.js')
 
 const discordClient = new Client({intents: [
     GatewayIntentBits.Guilds,
@@ -212,7 +212,7 @@ function isHello(msg)
     Object.keys(hellos).forEach(function(key) {
         if( hellos[key].indexOf(msg.trim().toLowerCase()) >=0 )
         {
-        	result = true;
+            result = true;
             return;
         }
     });
@@ -225,7 +225,7 @@ function detectLanguageFromHello(msg)
     Object.keys(hellos).forEach(function(key) {
         if( hellos[key].indexOf(msg.trim().toLowerCase()) >=0 )
         {
-        	result = key;
+            result = key;
             return;
         }
     });

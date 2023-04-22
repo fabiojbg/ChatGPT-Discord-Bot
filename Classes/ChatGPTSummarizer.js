@@ -47,6 +47,7 @@ const chatGPTSummarizer = async (openAI, preferredLanguage, text, discordMessage
         let prompt;
         let maxChars = 30000;
         let model = "gpt-3.5-turbo";
+        let messageTokens;
         let tokensToRespose = parseInt(process.env.TOKENS_TO_RESERVE_FOR_COMPLETION);
 
         if( text.length < 30000)
@@ -54,28 +55,25 @@ const chatGPTSummarizer = async (openAI, preferredLanguage, text, discordMessage
 
         do
         {
-          if( preferredLanguage === "EN")
-          {
-              prompt = [{role: "system", content: `You are a robot specialized in text summarization`},
-                        {role: "user", content:"Summarize this with the most complete answer possible: " + text.substring(0, maxChars)}];
-          }
-          else
-          {
-              prompt = [{role: "system", content: `Você é um robô que faz o resumo de textos`},
-                        {role: "user", content:"Faça um resumo disto com a resposta mais completa possível:" + text.substring(0, maxChars)}];
-          }
-          let messageTokens = num_tokens_from_messages(prompt, model);          
+            if( preferredLanguage === "EN")
+            {
+                prompt = [{role: "system", content: `You are a robot specialized in text summarization`},
+                          {role: "user", content:"Summarize this with the most complete answer possible: " + text.substring(0, maxChars)}];
+            }
+            else
+            {
+                prompt = [{role: "system", content: `Você é um robô que faz o resumo de textos`},
+                          {role: "user", content:"Faça um resumo disto com a resposta mais completa possível:" + text.substring(0, maxChars)}];
+            }
+            messageTokens = num_tokens_from_messages(prompt, model);          
 
-          if( (messageTokens + tokensToRespose) > 4096 )
             maxChars -= 500;
-          else
-            break;
 
-        } while (true);
+        } while ((messageTokens + tokensToRespose) > 4096);
 
         await discordMessage.channel.sendTyping(); // show users the bot is typing
 
-        gptResponse = await openAI.createChatCompletion({
+        let gptResponse = await openAI.createChatCompletion({
             model: model,
             messages: prompt,
             temperature: 0.7,

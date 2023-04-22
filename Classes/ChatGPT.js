@@ -78,7 +78,7 @@ async function createCompletion(openai, conversation)
         let maxTokens = maxConversationTokens - usedTokens;
 
         console.log(`**********************\n${promptWithConversation}`);
-        gptResponse = await openai.createCompletion({
+        let gptResponse = await openai.createCompletion({
             model: conversation.responseModel,
             prompt: promptWithConversation + "\r\nRob: ",
             temperature: conversation.temperature,

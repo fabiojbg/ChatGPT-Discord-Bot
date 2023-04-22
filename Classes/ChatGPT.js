@@ -37,6 +37,7 @@ async function createChatCompletion(openAI, conversation)
             messages: conversation.getFullConversation(),
             temperature: conversation.temperature,
             max_tokens: maxTokens - 20,
+            user : conversation.userName
         })
 
         if( gptResponse.status == 200)

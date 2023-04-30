@@ -4,8 +4,8 @@
   "description": "A chatGPT chat bot for discord",
   "main": "index.js",
   "scripts": {
-    "start": "node discordBot.js",
-    "dev": "nodemon discordBot.js"
+    "start": "node index.js",
+    "dev": "nodemon index.js"
   },
   "author": "Fabio Botelho",
   "license": "MIT",

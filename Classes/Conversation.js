@@ -133,7 +133,7 @@ Conversation.prototype.updateUserUsage = function (usage, showInConsole)
 
     if( showInConsole)
     {
-        console.log(`
+        console.log(`User ${this.userName}:
 Prompt Tokens: ${usage.prompt_tokens}/${userUsage["PromptTokens"]}
 Complt Tokens: ${usage.completion_tokens}/${userUsage["CompletionTokens"]}
 Total  Tokens: ${usage.total_tokens}/${userUsage["TotalTokens"]}

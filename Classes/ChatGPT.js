@@ -1,5 +1,5 @@
 const { Configuration, OpenAIApi} = require('openai')
-
+const Env = require('../Util/Env');
 
 function ChatGPT(organization, apiKey)
 {
@@ -49,7 +49,8 @@ async function createChatCompletion(openAI, conversation)
 
             conversation.updateUserUsage(usage, true); // update the token used by the user
 
-            console.log( responseMsg );
+            if( Env.Debug )
+                console.log( responseMsg );
 
             return { success: true, 
                      responseMsg:responseMsg};
@@ -77,7 +78,8 @@ async function createCompletion(openai, conversation)
         var usedTokens = conversation.getCurrentConversationTokens();
         let maxTokens = maxConversationTokens - usedTokens;
 
-        console.log(`**********************\n${promptWithConversation}`);
+        if( Env.Debug )
+            console.log(`**********************\n${promptWithConversation}`);
         let gptResponse = await openai.createCompletion({
             model: conversation.responseModel,
             prompt: promptWithConversation + "\r\nRob: ",
@@ -95,7 +97,8 @@ async function createCompletion(openai, conversation)
 
             conversation.updateUserUsage(usage, true); // update the token used by the user
 
-            console.log( responseMsg );
+            if( Env.Debug )
+                console.log( responseMsg );
 
             return { success: true, 
                      responseMsg:responseMsg};

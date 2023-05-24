@@ -27,7 +27,7 @@ To run this Bot, follow these steps:
 
 Observations:
 
-If you wish to clear all current conversation history, all you have to do is say "Rob, Hi" (or simply "Hi" if thre is only you and the bot in the channel). If you preer to talk in portuguese you should just say - "Rob, oi"( or just "Oi" if there is only you and the bot in the channel)
+If you wish to clear all current conversation history, all you have to do is say "Rob, Hi" (or simply "Hi" if there is only you and the bot in the channel). If you prefer to talk in portuguese you should just say - "Rob, oi"( or just "Oi" if there is only you and the bot in the channel)
 
 Warnings about this version: 
 - The conversations are separated for each user and are stored only in memory. All conversations will be lost if the service is rebooted. 

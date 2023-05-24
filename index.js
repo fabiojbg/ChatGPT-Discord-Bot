@@ -59,7 +59,7 @@ discordClient.on('messageCreate', async function(discordMessage){
         const result = await chatGPT.createCompletion(userConversation);
         if( result.success )
         {
-            // discord messagens cannot exceed 2000 characters, so we have to split the messagens in chuncks of 2000 characters or less.
+            // discord messagens cannot exceed 2000 characters, so we have to split the messagens in chunks of 2000 characters or less.
             var responseChunks = result.responseMsg.match(/(.|[\r\n]){1,1999}/g);
             let i=0;
             do{

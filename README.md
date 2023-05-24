@@ -15,18 +15,23 @@ To run this Bot, follow these steps:
 
 2) Copy the .env_sample file and rename it to .env.
 
-3) Create a bot in Discord and obtain its access token. Paste this token in the DISCORD_TOKEN key in the .env file.
+3) Create a bot in Discord and obtain its access token. This video from Adrian Twarog can help you on this: https://www.youtube.com/watch?v=roMykVsig-A&t=83s
 
-4) Create an OpenAI account and generate an API key. Copy the OpenAI API key and OpenAI  Organization keys to the OPENAI_KEY and OPENAI_ORGANIZATION keys in the .env file.
+4) Paste the bot token generated in the previous step in the DISCORD_TOKEN key in the .env file.
 
-5) Open a terminal in VS Code and run npm install.
+5) Create an OpenAI account and generate an API key. Copy the OpenAI API key and OpenAI  Organization keys to the OPENAI_KEY and OPENAI_ORGANIZATION keys in the .env file.
 
-6) Run npm start dev to start the application.
+6) Open a terminal in VS Code and run npm install.
+
+7) Run npm start dev to start the application.
 
 Observations:
 
-If you wish to clear all conversation history to start a new topic, all you have to do is say: "Rob, Hi"
-The conversations are stored in memory and it will be lost if the service is rebooted.
+If you wish to clear all current conversation history, all you have to do is say "Rob, Hi" (or simply "Hi" if thre is only you and the bot in the channel). If you preer to talk in portuguese you should just say - "Rob, oi"( or just "Oi" if there is only you and the bot in the channel)
+
+Warning about this version: 
+- The conversations are separated for each user and are stored only in memory. All conversations will be lost if the service is rebooted. 
+- This version does not diferentiate channels and the conversation you have in a channel will be treated as the same if you're in another channel.
 
 
 

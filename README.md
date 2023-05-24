@@ -19,7 +19,7 @@ To run this Bot, follow these steps:
 
 4) Paste the bot token generated in the previous step in the DISCORD_TOKEN key in the .env file.
 
-5) Create an OpenAI account and generate an API key. Copy the OpenAI API key and OpenAI  Organization keys to the OPENAI_KEY and OPENAI_ORGANIZATION keys in the .env file.
+5) Create an OpenAI account and generate an API key. Copy the OpenAI API key and OpenAI Organization keys to the OPENAI_KEY and OPENAI_ORGANIZATION keys in the .env file. You may need to buy some credits to use the ChatGPT api.
 
 6) Open a terminal in VS Code and run npm install.
 

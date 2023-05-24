@@ -29,7 +29,7 @@ Observations:
 
 If you wish to clear all current conversation history, all you have to do is say "Rob, Hi" (or simply "Hi" if thre is only you and the bot in the channel). If you preer to talk in portuguese you should just say - "Rob, oi"( or just "Oi" if there is only you and the bot in the channel)
 
-Warning about this version: 
+Warnings about this version: 
 - The conversations are separated for each user and are stored only in memory. All conversations will be lost if the service is rebooted. 
 - This version does not diferentiate channels and the conversation you have in a channel will be treated as the same if you're in another channel.
 

@@ -1,9 +1,11 @@
-# chatGPTDiscordBot
-This is a very complete chatGPT bot for Discord capable of keeping the conversation history. In fact, the bot keeps the most conversation history supported for the model. For example: if the 'gpt-3.5-turbo' model is being used, the bot will keep the most conversation history that consumes up to the 4096 tokens supported by the model. In fact, the bot saves some tokens for the bot responses, this can be set in the parameter TOKENS_TO_RESERVE_FOR_COMPLETION in the .env file.
+# ChatGPT Discord Bot
+This is a very complete ChatGPT Bot for Discord capable of keeping the conversation history and change models and its parameters. In fact, this **Bot** keeps the most possible conversation history supported for the model. For example: if the 'gpt-3.5-turbo' model is being used, the bot will keep the most conversation history that consumes up to the 4096 tokens supported by the model. In fact, the bot saves some tokens for the bot responses, this can be set in the parameter TOKENS_TO_RESERVE_FOR_COMPLETION in the .env file.
 
-By default, this Bot uses the 'gpt-3.5-turbo' openAI model.
+By default, this Bot uses the 'gpt-3.5-turbo' openAI model. 
 
-To direct you messages to the bot, you must start your messages with "rob, ". You don't need to to this if your in a private chat with the bot or there is only you and the bot in the channel.
+You can change the default Bot parameters with backlash ('\\') commands supported by the Bot. Type '?' and the Bot will list all the supported commands for you.
+
+To direct you messages to the Bot, you must start your messages with "rob, ". You don't need to to this if your in a private chat with the bot or there is only you and the bot in the channel.
 
 Below there is a chat example.
 
@@ -23,15 +25,11 @@ To run this Bot, follow these steps:
 
 6) Open a terminal in VS Code and run npm install.
 
-7) Run npm start dev to start the application.
+7) Run npm start dev to start the bot.
 
-Observations:
-
-If you wish to clear all current conversation history, all you have to do is say "Rob, Hi" (or simply "Hi" if there is only you and the bot in the channel). If you prefer to talk in portuguese you should just say - "Rob, oi"( or just "Oi" if there is only you and the bot in the channel)
 
 Warnings about this version: 
-- The conversations are separated for each user and are stored only in memory. All conversations will be lost if the service is rebooted. 
-- This version does not diferentiate channels and the conversation you have in a channel will be treated as the same if you're in another channel.
+- The conversations are separated for each user and are stored only in memory in this version. All conversations will be lost if the service is rebooted. 
 
 
 

@@ -28,7 +28,7 @@ discordClient.on('messageCreate', async function(discordMessage){
         if( !messageContent ) 
             return;        
 
-        const userConversation = getUserConversation(userName, messageContent);
+        const userConversation = getUserConversation(userName, discordMessage.channel.id, messageContent);
 
         // process any user commands if needed
         let commandResponse = detectUserAndProcessMessageCommands(userConversation, messageContent);
@@ -117,23 +117,25 @@ function preProcessMessage(discordMessage)
 }
 
 
-function getUserConversation(userName, messageContent)
+function getUserConversation(userName, channelId, messageContent)
 {
+    var conversationKey = userName + "_" + channelId;
+
     if( isHello(messageContent)) // if is Hello, user is asking to reset everything and initialize a new subject
     {
         const language = detectLanguageFromHello(messageContent);
-        conversations[userName] = new Conversation(userName, 
+        conversations[conversationKey] = new Conversation(userName, 
                                                    language, 
                                                    process.env.MAX_USER_CONVERSATION_CHARS,
                                                    parseInt(process.env.TOKENS_TO_RESERVE_FOR_COMPLETION));
-        return conversations[userName];
+        return conversations[conversationKey];
     }
 
-    const existingConversation = conversations[userName];
+    const existingConversation = conversations[conversationKey];
     if( !existingConversation)
     {
-        conversations[userName] = new Conversation(userName, defaultLanguage, process.env.MAX_USER_CONVERSATION_CHARS);
-        return conversations[userName];
+        conversations[conversationKey] = new Conversation(userName, defaultLanguage, process.env.MAX_USER_CONVERSATION_CHARS);
+        return conversations[conversationKey];
     }
     return existingConversation;
 }

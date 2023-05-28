@@ -21,7 +21,7 @@ Below there is a chat example.
 
 7) Run npm start dev to start the bot.
 
-### How to use
+### How to get help and change Bot behavior
 In fact, this **Bot** keeps the most possible conversation history supported for the model. For example: if the 'gpt-3.5-turbo' model is being used, the bot will keep the most conversation history that consumes up to the 4096 tokens supported by the model. In fact, the bot saves some tokens for the bot responses, this can be set in the parameter TOKENS_TO_RESERVE_FOR_COMPLETION in the .env file.
 
 By default, this Bot uses the 'gpt-3.5-turbo' openAI model. 

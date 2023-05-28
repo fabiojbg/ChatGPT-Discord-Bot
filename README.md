@@ -30,6 +30,7 @@ By default, this Bot uses the **'gpt-3.5-turbo'** openAI model.
 
 The Bot name is Rob. If your in a channel with a lot of people, you must start your messages with "**Rob,**" to let the Bot know your directing your message to it. <u>You don't need to to this if your in a private chat with the Bot or there is only you and the Bot in the channel.</u>
 
+
 ## How to get help from the Bot
 
 **Type '?'** and the Bot will list all the supported commands for you.
@@ -37,10 +38,25 @@ The Bot name is Rob. If your in a channel with a lot of people, you must start y
 
 ![alt text](./images/help_sample.png)
 
+## Chatting with a specific model and temperature
 
-## How to change Bot behavior
+To start a clean conversation with a specific model and temperature use the "Hi" prompt as follows:
 
-You can change some of the default Bot parameters with **backlash ('\\') commands** supported by the Bot. 
+![alt text](./images/Hi_with_params.png)
+
+The model and temperature parameters are <u>optional</u>. If not provided, the default values are "*turbo*" for the model and *0.7* for the temperature.
+
+The supported models are:
+ - turbo (for "gpt-3.5-turbo")
+ - davinci (for "text-davinci-003")
+ - ada (for "text-ada-001")
+ - curie (for "text-curie-001")
+ - babbage (for "text-babbage-001")
+ - codex (for "code-davinci-002")
+
+## How to change Bot behavior during conversation
+
+You can change some of the Bot parameters while chatting with the Bot with **backlash ('\\') commands** supported by the Bot. *Keep in mind that the conversation history will not be erased and the results may be odd.*
 
 ### Changing conversation model 
 

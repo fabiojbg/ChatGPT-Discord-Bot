@@ -28,15 +28,17 @@ discordClient.on('messageCreate', async function(discordMessage){
         if( !messageContent ) 
             return;        
 
-        const userConversation = getUserConversation(userName, discordMessage.channel.id, messageContent);
+        let channelId = discordMessage.channel.id;
 
         // process any user commands if needed
-        let commandResponse = detectUserAndProcessMessageCommands(userConversation, messageContent);
+        let commandResponse = initConversationAndProcessCommands(userName, channelId, messageContent);
         if( commandResponse) // if a command returns something, reply as a message and returns
         {
             discordMessage.reply(commandResponse);
             return;
         }
+
+        const userConversation = getUserConversation(userName, channelId);
 
         await discordMessage.channel.sendTyping(); // show users the bot is typing
 
@@ -116,40 +118,60 @@ function preProcessMessage(discordMessage)
     return messageContent;
 }
 
-
-function getUserConversation(userName, channelId, messageContent)
+function getUserConversation(userName, channelId)
 {
-    var conversationKey = userName + "_" + channelId;
-
-    if( isHello(messageContent)) // if is Hello, user is asking to reset everything and initialize a new subject
-    {
-        const language = detectLanguageFromHello(messageContent);
-        conversations[conversationKey] = new Conversation(userName, 
-                                                   language, 
-                                                   process.env.MAX_USER_CONVERSATION_CHARS,
-                                                   parseInt(process.env.TOKENS_TO_RESERVE_FOR_COMPLETION));
-        return conversations[conversationKey];
-    }
-
-    const existingConversation = conversations[conversationKey];
-    if( !existingConversation)
-    {
-        conversations[conversationKey] = new Conversation(userName, defaultLanguage, process.env.MAX_USER_CONVERSATION_CHARS);
-        return conversations[conversationKey];
-    }
-    return existingConversation;
+    let conversationKey = userName + "_" + channelId;
+    return conversations[conversationKey];
 }
 
-function detectUserAndProcessMessageCommands(userConversation, messageContent)
+function setUserConversation(userName, channelId, conversation)
+{
+    let conversationKey = userName + "_" + channelId;
+    conversations[conversationKey] = conversation;
+}
+
+function initConversationAndProcessCommands(userName, channelId, messageContent)
 {
     let msg = messageContent.trim().toLowerCase();
-    
-    if( isHello(msg))
-    {
-        if( detectLanguageFromHello(msg) == "PT")
-            return `Olá.\nSou o Rob. Sou um robô especialista nos mais variados assuntos.\nComo posso te ajudar?`;
         
-        return `Hi.\nI'm Rob. I'm a friendly robot.\nHow can I help you?`;
+    let userConversation;
+
+    let capturePattern=/(?<hello>hi|hello|olá|ola|oi)\s*(?<model>turbo|ada|davinci|curie|babbage|codex)*\s*(?<temp>\d+(\.\d{1})*)*/;
+    let patternFound = msg.match(capturePattern);
+    if( patternFound )
+    {
+        let language = detectLanguageFromHello(patternFound.groups.hello);
+        userConversation = new Conversation(userName, 
+                                            language, 
+                                            parseInt(process.env.TOKENS_TO_RESERVE_FOR_COMPLETION));
+
+        setUserConversation( userName, channelId, userConversation );
+
+        let model = patternFound.groups.model;
+        if( model && model.length>0)
+            changeConversationModel(userConversation, model);    
+
+        let temp = patternFound.groups.temp;
+        if( temp && temp.length>0)
+            changeConversationTemperature(userConversation, temp);
+
+        let returnMessage = "";
+        if( language == "PT")
+            returnMessage = `Olá.\nSou o Rob. Sou um robô especialista nos mais variados assuntos.\nComo posso te ajudar?`;
+        else
+            returnMessage = `Hi.\nI'm Rob. I'm a friendly robot.\nHow can I help you?`;
+        
+        return `(model=${userConversation.getResponseModel()}, temperature=${userConversation.getTemperature()})\r\n${returnMessage}`;
+    }
+
+    userConversation = getUserConversation(userName, channelId);
+    if( !userConversation)
+    {
+        userConversation = new Conversation(userName, 
+                                            defaultLanguage, 
+                                            parseInt(process.env.TOKENS_TO_RESERVE_FOR_COMPLETION));
+
+        setUserConversation(userName, channelId, userConversation);
     }
 
     if( msg.startsWith("\\"))  // it is a command message
@@ -160,33 +182,11 @@ function detectUserAndProcessMessageCommands(userConversation, messageContent)
         else
             return null
 
-    let capturePattern=/change\s+model\s+to\s+(?<model>turbo|ada|davinci|curie|babbage|codex)/;
-    let patternFound = msg.match(capturePattern);
+    capturePattern=/change\s+model\s+to\s+(?<model>turbo|ada|davinci|curie|babbage|codex)/;
+    patternFound = msg.match(capturePattern);
     if( patternFound )
     {
-        if( patternFound.groups.model.trim() == 'davinci')
-            userConversation.setResponseModel('text-davinci-003');
-        else
-        if( patternFound.groups.model.trim() == 'ada')
-            userConversation.setResponseModel('text-ada-001');
-        else
-        if( patternFound.groups.model.trim() == 'curie')
-            userConversation.setResponseModel('text-curie-001');
-        else
-        if( patternFound.groups.model.trim() == 'babbage')
-            userConversation.setResponseModel('text-babbage-001');
-        else
-        if( patternFound.groups.model.trim() == 'codex')
-            userConversation.setResponseModel('code-davinci-002');
-        else
-        if( patternFound.groups.model.trim() == 'turbo')
-            userConversation.setResponseModel('gpt-3.5-turbo');
-        else
-        if( patternFound.groups.model.trim() == 'gpt4')
-            userConversation.setResponseModel('gpt-3.5-turbo');
-        else
-            userConversation.setResponseModel('gpt-3.5-turbo');
-    
+        changeConversationModel(userConversation, patternFound.groups.model.trim());    
         return `Model changed to **${userConversation.getResponseModel()}**`;
     }
 
@@ -215,7 +215,7 @@ function detectUserAndProcessMessageCommands(userConversation, messageContent)
     if( msg === "??" || msg === "show conversation params")
     {
         return `**Conversation params:**
-        
+
 Model = **${userConversation.responseModel}**
 Temperature = **${userConversation.temperature}**
 Prefered Language = **${userConversation.preferredLanguage}**
@@ -228,17 +228,22 @@ Prefered Language = **${userConversation.preferredLanguage}**
 
 **?** shows this.
 
-**Hi** or **Oi** : clear all chat history and resets model to the default gpt-3.5-turbo
+**Hi** or **Oi** : clear all chat history and resets model to the default gpt-3.5-turbo model
     **Hi** or **Hello** resets to English as the preferred language
     **Oi** or **olá** resets to Portuguese as the preferred language
 
+**Hi** or **Oi** **<model> <temperature>** : clear all chat history and resets conversation with the model and temperature choosen
+    <model> and <temperature> parameters are optional. The default values are "turbo" and 0.7 respectively.
+    Example1: **Hi turbo 0.3**   *(uses gpt-3.5-turbo with temperature=0.3)*
+    Example2: **Oi davinci**  *(uses text-davinci-003 with temperature=0.7)*
+
 **\\change model to <model>** : changes the chatGPT model used for the conversation.
     <model> can be one of: turbo, ada, davinci, curie, babbage, codex
-    Example: \\change model to davinci
+    Example: **\\change model to davinci**
 
 **\\change temp to <temp>** : changes the temperature of the model
     <temp> must be between 0.0 and 2.0
-    Example: \\change temp to 0.5
+    Example: **\\change temp to 0.5**
 
 **\\??** or **\\show conversation params**: shows the current conversation params
 `
@@ -250,26 +255,62 @@ Prefered Language = **${userConversation.preferredLanguage}**
     return "Command not recognized";
 }
 
-let hellos = {
-    EN : ["hi", "hello"],
-    PT : ["olá", "ola", "oi"]
+
+function changeConversationModel(userConversation, model)
+{
+    if( model == 'davinci')
+    userConversation.setResponseModel('text-davinci-003');
+    else
+    if( model == 'ada')
+        userConversation.setResponseModel('text-ada-001');
+    else
+    if( model == 'curie')
+        userConversation.setResponseModel('text-curie-001');
+    else
+    if( model == 'babbage')
+        userConversation.setResponseModel('text-babbage-001');
+    else
+    if( model == 'codex')
+        userConversation.setResponseModel('code-davinci-002');
+    else
+    if( model == 'turbo')
+        userConversation.setResponseModel('gpt-3.5-turbo');
+    else
+    if( model == 'gpt4')
+        userConversation.setResponseModel('gpt-3.5-turbo');
+    else
+        userConversation.setResponseModel('gpt-3.5-turbo');
+
+    return userConversation.getResponseModel();
 }
 
-function isHello(msg)
+function changeConversationTemperature(userConversation, newTemperature)
 {
-	let result = false;
-    Object.keys(hellos).forEach(function(key) {
-        if( hellos[key].indexOf(msg.trim().toLowerCase()) >=0 )
+    try
+    {
+        const newTemp = parseFloat(newTemperature);
+        if( newTemp>=0 && newTemp<=2)
         {
-            result = true;
-            return;
+            const oldTemp = userConversation.getTemperature();
+            userConversation.setTemperature(newTemp);
+            return `Temperature changed from ${oldTemp} to **${userConversation.getTemperature()}**`;
         }
-    });
-    return result;
+        else
+            return 'Temperature must be between 0.0 and 2.0';
+    }
+    catch(err)
+    {
+        return 'Temperature must be between 0.0 and 2.0';
+    }
 }
 
 function detectLanguageFromHello(msg)
 {
+    let hellos = {
+        EN : ["hi", "hello"],
+        PT : ["olá", "ola", "oi"]
+    }
+
     let result = "EN";
     Object.keys(hellos).forEach(function(key) {
         if( hellos[key].indexOf(msg.trim().toLowerCase()) >=0 )

@@ -19,7 +19,9 @@ Below there is a chat example.
 
 6) Open a terminal in VS Code and run npm install.
 
-7) Run npm start dev to start the bot.
+7) Run **npm run start** to start the bot.
+
+8) For linux machines, you can make the bot run in background with the command **npm run background**. Keep in mind that this is not the best way to run the Bot in background as it does not starts when server reboots and you will have to use the <i>kill -9</i> to close the Bot.
 
 The **Bot** keeps the most possible conversation history supported for the model. For example: if the 'gpt-3.5-turbo' model is being used, the bot will keep the most conversation history that consumes up to the 4096 tokens supported by the model. In fact, the bot saves some tokens for the bot responses, this can be set in the parameter TOKENS_TO_RESERVE_FOR_COMPLETION in the .env file.
 

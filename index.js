@@ -197,18 +197,18 @@ function detectUserAndProcessMessageCommands(userConversation, messageContent)
         try
         {
             const newTemp = parseFloat(patternFound.groups.temp);
-            if( newTemp>=0 && newTemp<=1)
+            if( newTemp>=0 && newTemp<=2)
             {
                 const oldTemp = userConversation.getTemperature();
                 userConversation.setTemperature(newTemp);
                 return `Temperature changed from ${oldTemp} to **${userConversation.getTemperature()}**`;
             }
             else
-                return 'Temperature must be between 0.0 and 1.0';
+                return 'Temperature must be between 0.0 and 2.0';
         }
         catch(err)
         {
-            return 'Temperature must be between 0.0 and 1.0';
+            return 'Temperature must be between 0.0 and 2.0';
         }
     }
 
@@ -225,21 +225,21 @@ Prefered Language = **${userConversation.preferredLanguage}**
     {
         return `**Possible commands:**
 
-- **?** shows this.
+**?** shows this.
 
-- **Hi** or **Oi** : clear all chat history and resets model to the default gpt-3.5-turbo
+**Hi** or **Oi** : clear all chat history and resets model to the default gpt-3.5-turbo
     **Hi** or **Hello** resets to English as the preferred language
     **Oi** or **olá** resets to Portuguese as the preferred language
 
-- **\\change model to <model>** : changes the chatGPT model used for the conversation.
+**\\change model to <model>** : changes the chatGPT model used for the conversation.
     <model> can be one of: turbo, ada, davinci, curie, babbage, codex
     Example: \\change model to davinci
 
-- **\\change temp to <temp>** : changes the temperature of the model
-    <temp> must be between 0.0 and 1.0
+**\\change temp to <temp>** : changes the temperature of the model
+    <temp> must be between 0.0 and 2.0
     Example: \\change temp to 0.5
 
-- **\\??** or \\show conversation params**: shows the current conversation params
+**\\??** or **\\show conversation params**: shows the current conversation params
 `
     }
 

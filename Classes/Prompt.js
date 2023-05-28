@@ -14,6 +14,7 @@ function Prompt(language)
         {role: "user", content:"Hi."},
         {role: "assistant", content:"What would you like to know?"}];
     }
+    this.addedPromptMessages = [];
 }
 
 Prompt.prototype.getChatPrompt = function ()
@@ -21,21 +22,10 @@ Prompt.prototype.getChatPrompt = function ()
     return this.prompt;
 }
 
-Prompt.prototype.getTextPromp = function  ()
+Prompt.prototype.appendInPrompt = function (msg)
 {
-    const textPrompt = this.prompt.reduce( (accumulator, currentValue) => 
-    {
-        if( currentValue.role == "system")
-            accumulator = currentValue.content;
-        else
-        if( currentValue.role == "assistant")
-            accumulator += '\r\nRob: ' + currentValue.content;
-        else 
-        if( currentValue.role == "user")
-            accumulator += '\r\nUser: ' + currentValue.content;
-    }, '');
-
-    return textPrompt;
+    this.prompt.push({ role: "user", content: msg});
+    this.addedPromptMessages(msg);
 }
 
 module.exports = Prompt;

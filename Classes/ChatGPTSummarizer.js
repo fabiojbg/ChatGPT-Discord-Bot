@@ -30,7 +30,7 @@ ChatGPTSummarizer.prototype.summarizeMessageAttachments = function(preferredLang
                .pipe(fs.createWriteStream(`./download/${attachment.name}`))
                .on('finish', ()=>{ pdfToText(`./download/${attachment.name}`)
                                    .then( async(pdfText) => { 
-                                          var summary = await chatGPTSummarizer(openAI, preferredLanguage, pdfText, message); 
+                                          let summary = await chatGPTSummarizer(openAI, preferredLanguage, pdfText, message); 
                                           message.reply(summary);
                                     } )
                                    .catch(function(err){ 
@@ -138,7 +138,7 @@ function num_tokens_from_messages(messages, model)
         {
             let message = messages[i];
             num_tokens += tokens_per_message;
-            for (var prop in message) {
+            for (let prop in message) {
                 if (Object.prototype.hasOwnProperty.call(message, prop)) {
                     let tokens = encoding.encode(message[prop]);
                     num_tokens += tokens.length;

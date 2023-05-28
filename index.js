@@ -31,7 +31,7 @@ discordClient.on('messageCreate', async function(discordMessage){
         const userConversation = getUserConversation(userName, messageContent);
 
         // process any user commands if needed
-        var commandResponse = detectUserAndProcessMessageCommands(userConversation, messageContent);
+        let commandResponse = detectUserAndProcessMessageCommands(userConversation, messageContent);
         if( commandResponse) // if a command returns something, reply as a message and returns
         {
             discordMessage.reply(commandResponse);
@@ -40,7 +40,7 @@ discordClient.on('messageCreate', async function(discordMessage){
 
         await discordMessage.channel.sendTyping(); // show users the bot is typing
 
-        if( messageContent.startsWith("/summarize"))
+        if( messageContent.startsWith("\\summarize"))
         {
             if( discordMessage.attachments.size > 0)
             {
@@ -60,17 +60,17 @@ discordClient.on('messageCreate', async function(discordMessage){
         if( result.success )
         {
             // discord messagens cannot exceed 2000 characters, so we have to split the messagens in chunks of 2000 characters or less.
-            var responseChunks = result.responseMsg.match(/(.|[\r\n]){1,1999}/g);
+            let responseChunks = result.responseMsg.match(/(.|[\r\n]){1,1999}/g);
             let i=0;
             do{
-                var msg = responseChunks[i];
+                let msg = responseChunks[i];
                 if( i == (responseChunks.length-1))
                     discordMessage.reply(`${msg}\n(Conversation Tokens=${userConversation.getCurrentConversationTokens()})`);
                 else
                     discordMessage.reply(msg);
 
                 i++;
-            } while (i>responseChunks.length);
+            } while (i<responseChunks.length);
         }
         else
         {
@@ -104,10 +104,7 @@ function preProcessMessage(discordMessage)
     if( botIsMentionedByName )
         messageContent = messageContent.substring(4).trim();
 
-    if( discordMessage.content.startsWith("/summarize") )
-        return "/summarize";
-
-    if( discordMessage.content.startsWith("change model to") )
+    if( messageContent.startsWith("\\") ) // it is a command?
         return messageContent;
 
     let isPrivateChannel = discordMessage.channel.type === 1 || // detect if the channel is private with the bot
@@ -122,7 +119,7 @@ function preProcessMessage(discordMessage)
 
 function getUserConversation(userName, messageContent)
 {
-    if( isHello(messageContent)) // if is Hello, user is asking to initialize new subject
+    if( isHello(messageContent)) // if is Hello, user is asking to reset everything and initialize a new subject
     {
         const language = detectLanguageFromHello(messageContent);
         conversations[userName] = new Conversation(userName, 
@@ -143,8 +140,8 @@ function getUserConversation(userName, messageContent)
 
 function detectUserAndProcessMessageCommands(userConversation, messageContent)
 {
-    const msg = messageContent;
-
+    let msg = messageContent.trim().toLowerCase();
+    
     if( isHello(msg))
     {
         if( detectLanguageFromHello(msg) == "PT")
@@ -153,52 +150,101 @@ function detectUserAndProcessMessageCommands(userConversation, messageContent)
         return `Hi.\nI'm Rob. I'm a friendly robot.\nHow can I help you?`;
     }
 
-    let capturePattern=/change model to (?<model>turbo|ada|davinci|curie|babbage|codex)/;
-    let patternFound = msg.toLowerCase().match(capturePattern);
+    if( msg.startsWith("\\"))  // it is a command message
+        msg = msg.substring(1); // removes the command character
+    else
+        if( msg.startsWith("?")) // it start with a ? ignores all and show the help instructions
+            msg = "?";
+        else
+            return null
+
+    let capturePattern=/change\s+model\s+to\s+(?<model>turbo|ada|davinci|curie|babbage|codex)/;
+    let patternFound = msg.match(capturePattern);
     if( patternFound )
     {
-        if( patternFound.groups.model.trim().toLowerCase() == 'davinci')
+        if( patternFound.groups.model.trim() == 'davinci')
             userConversation.setResponseModel('text-davinci-003');
         else
-        if( patternFound.groups.model.trim().toLowerCase() == 'ada')
+        if( patternFound.groups.model.trim() == 'ada')
             userConversation.setResponseModel('text-ada-001');
         else
-        if( patternFound.groups.model.trim().toLowerCase() == 'curie')
+        if( patternFound.groups.model.trim() == 'curie')
             userConversation.setResponseModel('text-curie-001');
         else
-        if( patternFound.groups.model.trim().toLowerCase() == 'babbage')
+        if( patternFound.groups.model.trim() == 'babbage')
             userConversation.setResponseModel('text-babbage-001');
         else
-        if( patternFound.groups.model.trim().toLowerCase() == 'codex')
+        if( patternFound.groups.model.trim() == 'codex')
             userConversation.setResponseModel('code-davinci-002');
         else
-        if( patternFound.groups.model.trim().toLowerCase() == 'turbo')
+        if( patternFound.groups.model.trim() == 'turbo')
             userConversation.setResponseModel('gpt-3.5-turbo');
         else
-        if( patternFound.groups.model.trim().toLowerCase() == 'gpt4')
+        if( patternFound.groups.model.trim() == 'gpt4')
             userConversation.setResponseModel('gpt-3.5-turbo');
         else
             userConversation.setResponseModel('gpt-3.5-turbo');
     
-        return `Model changed to ${userConversation.getResponseModel()}`;
+        return `Model changed to **${userConversation.getResponseModel()}**`;
     }
 
-    capturePattern=/change temp to (?<temp>\d+(.\d{1}))/;
-    patternFound = msg.toLowerCase().match(capturePattern);
+    capturePattern=/change\s+temp\s+to\s+(?<temp>\d+(.\d{1})*)/;
+    patternFound = msg.match(capturePattern);
     if( patternFound )
     {
-        var newTemp = parseFloat(patternFound.groups.temp);
-        if( newTemp>=0 && newTemp<=1)
+        try
         {
-            const oldTemp = userConversation.getTemperature();
-            userConversation.setTemperature(newTemp);
-            return `Temperature changed from ${oldTemp} to ${userConversation.getTemperature()}`;
+            const newTemp = parseFloat(patternFound.groups.temp);
+            if( newTemp>=0 && newTemp<=1)
+            {
+                const oldTemp = userConversation.getTemperature();
+                userConversation.setTemperature(newTemp);
+                return `Temperature changed from ${oldTemp} to **${userConversation.getTemperature()}**`;
+            }
+            else
+                return 'Temperature must be between 0.0 and 1.0';
         }
-        else
-            return 'Temperature must be between 0 and 1';
+        catch(err)
+        {
+            return 'Temperature must be between 0.0 and 1.0';
+        }
     }
 
-    return null;
+    if( msg === "??" || msg === "show conversation params")
+    {
+        return `Conversation params:
+Model = **${userConversation.responseModel}**
+Temperature = **${userConversation.temperature}**
+Prefered Language = **${userConversation.preferredLanguage}**
+        `;
+    }
+
+    if( msg === "?" )
+    {
+        return `**Possible commands:**
+
+- **?** shows this.
+
+- **Hi** or **Oi** : clear all chat history and resets model to the default gpt-3.5-turbo
+    **Hi** or **Hello** resets to English as the preferred language
+    **Oi** or **olá** resets to Portuguese as the preferred language
+
+- **\\change model to <model>** : changes the chatGPT model used for the conversation.
+    <model> can be one of: turbo, ada, davinci, curie, babbage, codex
+    Example: \\change model to davinci
+
+- **\\change temp to <temp>** : changes the temperature of the model
+    <temp> must be between 0.0 and 1.0
+    Example: \\change temp to 0.5
+
+- **\\??** or \\show conversation params**: shows the current conversation params
+`
+    }
+
+    if( userConversation.getUserPreferredLanguage() == "PT")
+        return "Comando não reconhecido";
+
+    return "Command not recognized";
 }
 
 let hellos = {

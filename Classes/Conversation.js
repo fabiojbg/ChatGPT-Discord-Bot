@@ -1,7 +1,7 @@
 const Prompt = require("./Prompt")
 const tiktoken = require('tiktoken-node')
 
-function Conversation(userName, language, minTokensToReseveForConversation)
+function Conversation(userName, language, minTokensToReserveForCompletions)
 {
     this.prompt = new Prompt(language);
     this.userName = userName;
@@ -13,7 +13,7 @@ function Conversation(userName, language, minTokensToReseveForConversation)
     this.usage["PromptTokens"]=0;
     this.usage["CompletionTokens"]=0;
     this.usage["TotalTokens"]=0;
-    this.minTokensToReseveForConversation = minTokensToReseveForConversation | 250;
+    this.minTokensToReserveForCompletions = minTokensToReserveForCompletions | 500;
     this.tokensPerModel = [
         { model: "gpt-3.5-turbo", capacity: 4097},
         { model: "gpt-3.5-turbo-0301", capacity: 4097},
@@ -52,8 +52,8 @@ Conversation.prototype.setResponseModel = function (modelName)
 {
     let model = modelName.trim().toLowerCase();
     
-    if( _completionModels.indexOf(model)>0 || 
-        _chatModels.indexOf(model)>0 )
+    if( _completionModels.indexOf(model)>-1 || 
+        _chatModels.indexOf(model)>-1 )
     {
         this.responseModel = model;
     }
@@ -94,7 +94,7 @@ Conversation.prototype.appendMessage = function (role, message)
                                                  this.conversation, 
                                                  this.responseModel, 
                                                  this.getCurrentModelType(),
-                                                 modelCapacity - this.minTokensToReseveForConversation);
+                                                 modelCapacity - this.minTokensToReserveForCompletions);
 }
 
 Conversation.prototype.getCurrentConversationTokens = function()
@@ -113,7 +113,7 @@ Conversation.prototype.getFullConversation = function ()
     const conversation = [...this.prompt.getChatPrompt(), 
                           ...this.conversation];
 
-    if( conversationType === "text")                          
+    if( conversationType === "completion")                          
         return getConversationText(conversation);
 
     return conversation;
@@ -181,11 +181,14 @@ function clearOldMessagesIfNeeded(mainPrompt, messages, model, modelType, maxTok
         }
         else
         {
-            var conversationText = getConversationText(truncatedMessages);
+            let conversationText = getConversationText(truncatedMessages);
             conversationTokens = num_tokens_from_conversation_text(conversationText, model);
         }
     } while (conversationTokens > maxTokensToKeepInMessages);
    
+    if( i === 0)
+        return messages;
+
     return messages.slice(i);
 }
 
@@ -236,7 +239,7 @@ function num_tokens_from_messages(messages, model)
         {
             let message = messages[i];
             num_tokens += tokens_per_message;
-            for (var prop in message) {
+            for (let prop in message) {
                 if (Object.prototype.hasOwnProperty.call(message, prop)) {
                     let tokens = encoding.encode(message[prop]);
                     num_tokens += tokens.length;

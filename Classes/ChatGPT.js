@@ -13,6 +13,10 @@ function ChatGPT(organization, apiKey)
 
 ChatGPT.prototype.createCompletion = async function (conversation)
 {
+    if(!conversation)
+        return { success: false, 
+                responseMsg:`conversation is empty`};
+
     if( conversation.getCurrentModelType() === 'chat')
     {
         return await createChatCompletion(this.openAI, conversation);
@@ -23,9 +27,6 @@ ChatGPT.prototype.createCompletion = async function (conversation)
 
 async function createChatCompletion(openAI, conversation)
 {
-    if(!conversation)
-        return { success: false, 
-                responseMsg:`conversation is empty`};
     try
     {
         let maxConversationTokens = conversation.getMaxTokensSupported();
@@ -73,13 +74,14 @@ async function createCompletion(openai, conversation)
     try
     {
         // conversation must have the prompt in the begining
-        var promptWithConversation = conversation.getFullConversation();
-        var maxConversationTokens = conversation.getMaxTokensSupported();
-        var usedTokens = conversation.getCurrentConversationTokens();
+        let promptWithConversation = conversation.getFullConversation();
+        let maxConversationTokens = conversation.getMaxTokensSupported();
+        let usedTokens = conversation.getCurrentConversationTokens();
         let maxTokens = maxConversationTokens - usedTokens;
 
         if( Env.Debug )
             console.log(`**********************\n${promptWithConversation}`);
+            
         let gptResponse = await openai.createCompletion({
             model: conversation.responseModel,
             prompt: promptWithConversation + "\r\nRob: ",

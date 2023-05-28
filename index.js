@@ -156,7 +156,7 @@ function detectUserAndProcessMessageCommands(userConversation, messageContent)
         msg = msg.substring(1); // removes the command character
     else
         if( msg.startsWith("?")) // it start with a ? ignores all and show the help instructions
-            msg = "?";
+            msg = msg.substring(0, 2); // to accept ? and ?? helps
         else
             return null
 
@@ -214,7 +214,8 @@ function detectUserAndProcessMessageCommands(userConversation, messageContent)
 
     if( msg === "??" || msg === "show conversation params")
     {
-        return `Conversation params:
+        return `**Conversation params:**
+        
 Model = **${userConversation.responseModel}**
 Temperature = **${userConversation.temperature}**
 Prefered Language = **${userConversation.preferredLanguage}**

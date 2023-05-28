@@ -5,7 +5,7 @@ Below there is a chat example.
 
 ![alt text](./images/chat_sample.png)
 
-### To run this Bot:
+## To run this Bot:
 
 1) Clone the repository and open it in Visual Studio Code.
 
@@ -21,18 +21,28 @@ Below there is a chat example.
 
 7) Run npm start dev to start the bot.
 
-### How to get help and change Bot behavior
-In fact, this **Bot** keeps the most possible conversation history supported for the model. For example: if the 'gpt-3.5-turbo' model is being used, the bot will keep the most conversation history that consumes up to the 4096 tokens supported by the model. In fact, the bot saves some tokens for the bot responses, this can be set in the parameter TOKENS_TO_RESERVE_FOR_COMPLETION in the .env file.
+The **Bot** keeps the most possible conversation history supported for the model. For example: if the 'gpt-3.5-turbo' model is being used, the bot will keep the most conversation history that consumes up to the 4096 tokens supported by the model. In fact, the bot saves some tokens for the bot responses, this can be set in the parameter TOKENS_TO_RESERVE_FOR_COMPLETION in the .env file.
 
-By default, this Bot uses the 'gpt-3.5-turbo' openAI model. 
+By default, this Bot uses the **'gpt-3.5-turbo'** openAI model. 
 
-You can change some of the default Bot parameters with backlash ('\\') commands supported by the Bot. Type '?' and the Bot will list all the supported commands for you.
+
+## How to chat with the Bot
+
+The Bot name is Rob. If your in a channel with a lot of people, you must start your messages with "**Rob,**" to let the Bot know your directing your message to it. <u>You don't need to to this if your in a private chat with the Bot or there is only you and the Bot in the channel.</u>
+
+## How to get help from the Bot
+
+**Type '?'** and the Bot will list all the supported commands for you.
+
 
 ![alt text](./images/help_sample.png)
 
-To direct you messages to the Bot, you must start your messages with "rob, ". You don't need to to this if your in a private chat with the bot or there is only you and the bot in the channel.
 
-#### Changing conversation model 
+## How to change Bot behavior
+
+You can change some of the default Bot parameters with **backlash ('\\') commands** supported by the Bot. 
+
+### Changing conversation model 
 
 You can change the model used in your conversation with this command:
 
@@ -47,12 +57,18 @@ The supported models are:
  - codex (for "code-davinci-002")
 
 
-#### Changing conversation temperature
+### Changing conversation temperature
 You can change the model temperature with this command:
 
 ![alt text](./images/change_temperature_sample.png)
 
 Values must be beetween 0.0 and 2.0
+
+### Showing current conversation parameters
+You can view the conversation parameters any time with the ?? or the <i>\\show conversation params</i> command:
+
+![alt text](./images/conversation_params_sample.png)
+
 
 #### Warnings about this version: 
 - The conversations are separated for each user and are stored only in memory in this version. All conversations will be lost if the service is rebooted. 
